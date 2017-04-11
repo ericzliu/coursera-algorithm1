@@ -1,56 +1,117 @@
-import javax.sound.sampled.Line;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.TreeSet;
 
 public class FastCollinearPoints {
-    private final static double EPSILON = 0.00001;
+
+    private static final double EPSILON = 0.00001;
     private LineSegment[] segments;
 
-    private LineSegment createSegment(ArrayList<Point> pts) {
-        Collections.sort(pts);
-        return new LineSegment(pts.get(0), pts.get(pts.size() - 1));
+    private static class Line {
+
+        private double slope;
+        private Point p;
+
+        public Line(Point p1, double slopeVal) {
+            if (slopeVal == Double.NEGATIVE_INFINITY) {
+                throw new IllegalArgumentException();
+            }
+            slope = slopeVal;
+            p = p1;
+        }
+
+        public double getSlope() {
+            return slope;
+        }
+
+        public Point getP() {
+            return p;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Line line = (Line) o;
+
+            if (Double.compare(line.slope, slope) != 0) {
+                return false;
+            }
+
+            return (p == line.p || Double.compare(p.slopeTo(line.p), slope) == 0);
+        }
+
+        @Override
+        public int hashCode() {
+            return Double.hashCode(slope);
+        }
     }
 
     // finds all line segments containing 4 or more points
-    public FastCollinearPoints(Point[] points) {
-        HashSet<String> hashSet = new HashSet<>();
-        ArrayList<LineSegment> segments = new ArrayList<>();
-
+    public FastCollinearPoints(final Point[] points) {
+        Point[] buffer = Arrays.copyOf(points, points.length);
+        Arrays.sort(buffer);
+        validateInput(buffer);
+        HashSet<Line> hashSet = new HashSet<>();
+        ArrayList<LineSegment> segs = new ArrayList<>();
         ArrayList<Point> pts = new ArrayList<>(32);
         int length = points.length;
-        Point[] buffer = Arrays.copyOf(points, points.length);
         for (Point p : points) {
             pts.add(p);
             Arrays.sort(buffer, p.slopeOrder());
             double lastSlope = p.slopeTo(buffer[0]);
             for (int i = 1; i < length; i += 1) {
                 double slope = p.slopeTo(buffer[i]);
-                if (Math.abs(slope - lastSlope) < EPSILON) {
-                    pts.add(buffer[i]);
-                } else {
-                    addSegment(hashSet, segments, pts);
+                if (Math.abs(slope - lastSlope) > 0) {
+                    addSegment(hashSet, segs, pts);
                     pts.clear();
                     pts.add(p);
                 }
+                pts.add(buffer[i]);
                 lastSlope = slope;
             }
-            addSegment(hashSet, segments, pts);
+            addSegment(hashSet, segs, pts);
             pts.clear();
         }
-        this.segments = segments.toArray(new LineSegment[0]);
+        this.segments = segs.toArray(new LineSegment[0]);
     }
 
-    private void addSegment(HashSet<String> hashSet, ArrayList<LineSegment> segments, ArrayList<Point> pts) {
+    private static void validateInput(Point[] points) {
+        if (points == null) {
+            throw new NullPointerException();
+        }
+        int length = points.length;
+        for (int i = 0; i < length; i += 1) {
+            if (points[i] == null) {
+                throw new NullPointerException();
+            }
+        }
+
+        if (length > 1) {
+            Point p = points[0];
+            for (int i = 1; i < length; i += 1) {
+                if (points[i].compareTo(p) == 0) {
+                    throw new IllegalArgumentException();
+                }
+                p = points[i];
+            }
+        }
+    }
+
+    private LineSegment createSegment(ArrayList<Point> pts) {
+        Collections.sort(pts);
+        return new LineSegment(pts.get(0), pts.get(pts.size() - 1));
+    }
+
+    private void addSegment(HashSet<Line> hashSet, ArrayList<LineSegment> segs, ArrayList<Point> pts) {
         if (pts.size() >= 4) {
+            Line line = new Line(pts.get(0), pts.get(0).slopeTo(pts.get(3)));
             LineSegment segment = createSegment(pts);
-            String str = segment.toString();
-            if (!hashSet.contains(str)) {
-                hashSet.add(str);
-                segments.add(segment);
+            if (!hashSet.contains(line)) {
+                hashSet.add(line);
+                segs.add(segment);
             }
         }
     }
@@ -62,6 +123,6 @@ public class FastCollinearPoints {
 
     // the line segments
     public LineSegment[] segments() {
-        return segments;
+        return Arrays.copyOf(segments, segments.length);
     }
 }

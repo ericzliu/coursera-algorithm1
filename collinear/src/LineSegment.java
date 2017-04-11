@@ -26,8 +26,14 @@ public class LineSegment {
         if (p == null || q == null) {
             throw new NullPointerException("argument is null");
         }
-        this.p = p;
-        this.q = q;
+        if (p.compareTo(q) < 0) {
+            this.p = p;
+            this.q = q;
+        }
+        else {
+            this.p = q;
+            this.q = p;
+        }
     }
 
     
