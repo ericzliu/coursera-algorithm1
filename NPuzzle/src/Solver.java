@@ -33,9 +33,11 @@ public class Solver {
             SearchNode prev = node.getPrev();
             Board board = node.getBoard();
             final int num = node.getSteps() + 1;
-            Board prevBoard = prev == null? null : prev.getBoard();
-            for (Board neighbor : board.neighbors(prevBoard)) {
-                pq.insert(new SearchNode(num, neighbor, node));
+            Board prevBoard = prev == null ? null : prev.getBoard();
+            for (Board neighbor : board.neighbors()) {
+                if (prevBoard == null || !prevBoard.equals(neighbor)) {
+                    pq.insert(new SearchNode(num, neighbor, node));
+                }
             }
             return node;
         }
@@ -72,13 +74,13 @@ public class Solver {
         return -1;
     }
 
-    private static class BoardPath implements Iterable<Board>
-    {
+    private static class BoardPath implements Iterable<Board> {
         private final List<Board> boards;
 
         BoardPath(final List<Board> bds) {
             boards = bds;
         }
+
         @Override
         public Iterator<Board> iterator() {
             return boards.iterator();
@@ -91,7 +93,11 @@ public class Solver {
 
     // sequence of boards in a shortest solution; null if unsolvable
     public Iterable<Board> solution() {
-        return solution;
+        if (isSolvable()) {
+            return solution;
+        } else {
+            return null;
+        }
     }
 
     private static class SearchNode implements Comparable<SearchNode> {

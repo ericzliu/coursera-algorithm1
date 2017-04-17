@@ -186,7 +186,7 @@ public class BoardTest {
         blocks1[2][2] = 7;
         Board b1 = new Board(blocks1);
         String actual = b1.toString();
-        String exp = " 3 2 1" + System.lineSeparator() + " 6 5 4" + System.lineSeparator() + " 0 8 7" + System.lineSeparator();
+        String exp = "3" + System.lineSeparator() + " 3  2  1 " + System.lineSeparator() + " 6  5  4 " + System.lineSeparator() + " 0  8  7 " + System.lineSeparator();
         assertEquals(exp, actual);
     }
 
@@ -204,15 +204,15 @@ public class BoardTest {
         blocks1[2][1] = 8;
         blocks1[2][2] = 7;
         Board b1 = new Board(blocks1);
-        Iterable<Board> neighbors = b1.neighbors(null);
+        Iterable<Board> neighbors = b1.neighbors();
         Iterator<Board> iterator = neighbors.iterator();
         Set<String> actuals = new HashSet<>();
         while (iterator.hasNext()) {
             Board next = iterator.next();
             actuals.add(next.toString());
         }
-        String lb1 = " 3 2 1" + System.lineSeparator() + " 6 5 4" + System.lineSeparator() + " 8 0 7" + System.lineSeparator();
-        String lb2 = " 3 2 1" + System.lineSeparator() + " 0 5 4" + System.lineSeparator() + " 6 8 7" + System.lineSeparator();
+        String lb1 = "3" + System.lineSeparator() + " 3  2  1 " + System.lineSeparator() + " 6  5  4 " + System.lineSeparator() + " 8  0  7 " + System.lineSeparator();
+        String lb2 = "3" + System.lineSeparator() + " 3  2  1 " + System.lineSeparator() + " 0  5  4 " + System.lineSeparator() + " 6  8  7 " + System.lineSeparator();
         Set<String> exp = new HashSet<>();
         exp.add(lb1);
         exp.add(lb2);
