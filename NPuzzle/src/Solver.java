@@ -27,23 +27,22 @@ public class Solver {
         search();
     }
 
-    private final SearchNode exploreFirst(MinPQ<SearchNode> pq) {
+    private SearchNode exploreFirst(MinPQ<SearchNode> pq) {
         if (!pq.isEmpty()) {
             SearchNode node = pq.delMin();
             SearchNode prev = node.getPrev();
             Board board = node.getBoard();
             final int num = node.getSteps() + 1;
-            for (Board neighbor : board.neighbors()) {
-                if (prev == null || !neighbor.equals(prev.getBoard())) {
-                    pq.insert(new SearchNode(num, neighbor, node));
-                }
+            Board prevBoard = prev == null? null : prev.getBoard();
+            for (Board neighbor : board.neighbors(prevBoard)) {
+                pq.insert(new SearchNode(num, neighbor, node));
             }
             return node;
         }
         return null;
     }
 
-    private final void search() {
+    private void search() {
         while (true) {
             SearchNode board = exploreFirst(queue);
             SearchNode twinBoard = exploreFirst(twinQueue);
@@ -75,7 +74,7 @@ public class Solver {
 
     private static class BoardPath implements Iterable<Board>
     {
-        final List<Board> boards;
+        private final List<Board> boards;
 
         BoardPath(final List<Board> bds) {
             boards = bds;

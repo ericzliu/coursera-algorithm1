@@ -1,36 +1,41 @@
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class Board {
 
-    final int[][] digits;
-    final int hamming;
-    final int manhattan;
-    final int dim;
-
+    private final int[][] digits;
+    private final int hamming;
+    private final int manhattan;
+    private final int dim;
+    private final int emptyTileRow;
+    private final int emptyTileCol;
     // construct a board from an n-by-n array of blocks
     // (where blocks[i][j] = block in row i, column j)
     public Board(final int[][] blocks) {
-        digits = blocks;
+        digits = deepCopy(blocks);
         dim = blocks.length;
-        int dist = 0;
+        int t1 = 0;
+        int t2 = 0;
+
+        int voidRow = 0;
+        int voidCol = 0;
         for (int i = 0; i < dim; i += 1) {
             for (int j = 0; j < dim; j += 1) {
                 if (digits[i][j] != 0 && getTarget(i, j) != digits[i][j]) {
-                    dist += 1;
+                    t1 += 1;
+                    t2 += manhattan(i, j);
+                } else if (digits[i][j] == 0) {
+                    voidCol = j;
+                    voidRow = i;
                 }
             }
         }
-        hamming = dist;
-        dist = 0;
-        for (int i = 0; i < dim; i += 1) {
-            for (int j = 0; j < dim; j += 1) {
-                if (digits[i][j] != 0)
-                    dist += manhattan(i, j);
-            }
-        }
-        manhattan = dist;
+        emptyTileCol = voidCol;
+        emptyTileRow = voidRow;
+        hamming = t1;
+        manhattan = t2;
     }
 
     // board dimension n
@@ -61,14 +66,14 @@ public class Board {
 
     // is this board the goal board?
     public boolean isGoal() {
-        return hamming() == 0;
+        return manhattan() == 0;
     }
 
-    private int[][] deepCopy() {
-        final int dim = dimension();
+    private static int[][] deepCopy(int[][] tiles) {
+        final int dim = tiles.length;
         int[][] c = new int[dim][dim];
         for (int i = 0; i < dim; i += 1) {
-            System.arraycopy(digits[i], 0, c[i], 0, dim);
+            System.arraycopy(tiles[i], 0, c[i], 0, dim);
         }
         return c;
     }
@@ -80,7 +85,7 @@ public class Board {
     }
     // a board that is obtained by exchanging any pair of blocks
     public Board twin() {
-        int[][] digitsCopy = deepCopy();
+        int[][] digitsCopy = deepCopy(digits);
         int i1 = -1;
         int j1 = -1;
         int i2 = -1;
@@ -103,7 +108,7 @@ public class Board {
         return new Board(digitsCopy);
     }
 
-    private boolean less(int p , int q) {
+    private boolean less(int p, int q) {
         if (p > 0 && q == 0)
             return true;
         if (p > 0 && q > 0 && p < q)
@@ -196,8 +201,8 @@ public class Board {
 
     private static class BoardIterator implements Iterator<Board>
     {
-        final List<Board> boards;
-        int current;
+        private final List<Board> boards;
+        private int current;
 
         BoardIterator(List<Board> bds) {
             boards = bds;
@@ -211,9 +216,12 @@ public class Board {
 
         @Override
         public Board next() {
-            Board board = boards.get(current);
-            current += 1;
-            return board;
+            if (hasNext()) {
+                Board board = boards.get(current);
+                current += 1;
+                return board;
+            }
+            throw new NoSuchElementException();
         }
 
     }
@@ -232,37 +240,37 @@ public class Board {
     }
 
     // all neighboring boards
-    public Iterable<Board> neighbors() {
-        int row = 0;
-        int col = 0;
-        for (int i = 0; i < dim; i += 1) {
-            for (int j = 0; j < dim; j += 1) {
-                if (digits[i][j] == 0) {
-                    row = i;
-                    col = j;
-                }
-            }
-        }
+    public Iterable<Board> neighbors(Board parent) {
+        int row = emptyTileRow;
+        int col = emptyTileCol;
         List<Board> bds = new ArrayList<>();
         if (row < dim - 1) {
-            int[][] ints = deepCopy();
-            exch(ints, row, col, row + 1, col);
-            bds.add(new Board(ints));
+            if (parent == null || (row + 1) != parent.emptyTileRow || col != parent.emptyTileCol) {
+                int[][] ints = deepCopy(digits);
+                exch(ints, row, col, row + 1, col);
+                bds.add(new Board(ints));
+            }
         }
         if (row > 0) {
-            int[][] ints = deepCopy();
-            exch(ints, row, col, row - 1, col);
-            bds.add(new Board(ints));
+            if (parent == null || (row - 1) != parent.emptyTileRow || col != parent.emptyTileCol) {
+                int[][] ints = deepCopy(digits);
+                exch(ints, row, col, row - 1, col);
+                bds.add(new Board(ints));
+            }
         }
         if (col > 0) {
-            int[][] ints = deepCopy();
-            exch(ints, row, col, row, col - 1);
-            bds.add(new Board(ints));
+            if (parent == null || row != parent.emptyTileRow || (col - 1) != parent.emptyTileCol) {
+                int[][] ints = deepCopy(digits);
+                exch(ints, row, col, row, col - 1);
+                bds.add(new Board(ints));
+            }
         }
         if (col < dim - 1) {
-            int[][] ints = deepCopy();
-            exch(ints, row, col, row, col + 1);
-            bds.add(new Board(ints));
+            if (parent == null || row != parent.emptyTileRow || (col + 1) != parent.emptyTileCol) {
+                int[][] ints = deepCopy(digits);
+                exch(ints, row, col, row, col + 1);
+                bds.add(new Board(ints));
+            }
         }
         return new BoardIterable(bds);
     }
@@ -351,14 +359,17 @@ public class Board {
 
         @Override
         public Integer next() {
-            int digit = digits[row][col];
-            n += 1;
             if (hasNext()) {
-                if (move(primary)) {
-                    move(secondary);
+                int digit = digits[row][col];
+                n += 1;
+                if (hasNext()) {
+                    if (move(primary)) {
+                        move(secondary);
+                    }
                 }
+                return digit;
             }
-            return digit;
+            throw new NoSuchElementException();
         }
     }
 

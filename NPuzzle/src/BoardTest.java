@@ -204,7 +204,7 @@ public class BoardTest {
         blocks1[2][1] = 8;
         blocks1[2][2] = 7;
         Board b1 = new Board(blocks1);
-        Iterable<Board> neighbors = b1.neighbors();
+        Iterable<Board> neighbors = b1.neighbors(null);
         Iterator<Board> iterator = neighbors.iterator();
         Set<String> actuals = new HashSet<>();
         while (iterator.hasNext()) {
