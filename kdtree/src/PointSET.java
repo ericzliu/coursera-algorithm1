@@ -72,7 +72,7 @@ public class PointSET {
             return null;
         }
         Point2D neighbor = null;
-        double minDist = Double.MIN_VALUE;
+        double minDist = Double.MAX_VALUE;
         Iterator<Point2D> iterator = points.iterator();
         while (iterator.hasNext()) {
             Point2D d = iterator.next();
